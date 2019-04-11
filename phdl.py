@@ -261,7 +261,7 @@ def check_files(directory,start_row=1,grid_end=0):
         check_fun = None
     elif directory == 'itemselect':
         check_types = check_item_select_types
-        col_num = 8
+        col_num = 9
         check_fun = check_item_select
     else:
         raise MyException('目录名错误！')
@@ -270,6 +270,7 @@ def check_files(directory,start_row=1,grid_end=0):
     print('............................')
     if files:
         for file in files:
+            print('检验的文件 file:', file)
             infos = []
             wb = xlrd.open_workbook(file)
             ws = wb.sheets()[0]
@@ -281,7 +282,7 @@ def check_files(directory,start_row=1,grid_end=0):
                 datas = ws.row_values(i)
                 info = check_types(file,datas,i+1)
                 if info:
-                    infos.append('文件：{}中，第{}行，第{}列数据有误'.format(file,i+1,index+1))
+                    infos.append('文件：{}中，第{}行数据有误'.format(file,i+1,))
                 if len(infos) >= 3:
                     print('数据类型错误：',file,'\n')
                     for info in infos:
@@ -290,8 +291,9 @@ def check_files(directory,start_row=1,grid_end=0):
             # 校验行数据
             if not infos and check_fun is not None:
                 for i in range(start_row,nrows-grid_end):
-                    info = check_fun(file,ws.row_values(i),i+1)
+                    info = check_fun(file,ws.row_values(i)[:8],i+1)
                     if info:
+                        print(ws.row_values(i))
                         infos.append(info)
 
             # 检验关键信息
@@ -635,9 +637,36 @@ def add_freeexam():
 
 if __name__ == '__main__':
     # arrange_phid()
-    # get_all_data_xls()
-    get_sch_data_xls()
+
     # gen_seg_for_sch()
+    # get_all_data_xls()
+    # get_sch_data_xls()
+
+    # datas = gen_book_tbl()
+    # save_datas_xlsx('各时间段各考点考试分组号.xlsx',datas)
+
+    # check_files('freeexam')
+    # check_files('itemselect')
+
+    exe_flag = input('全部免试表xls和选项表xls导入到数据库中并检验(y/n)：')
+    if exe_flag == 'y':
+        print('初始化数据库表...')
+        init_tab([FreeExam,ItemSelect])
+        print('...初始化完成！')
+        print('...导入免试表...')
+        gath_data('freeexam')
+        print('...导入选项表...')
+        gath_data('itemselect')
+        print('...开始检查数据...')
+        check_select()
+
+    exe_flag = input('是否启动数据合并到正式表StudPh中：(y/n)')
+    if exe_flag == 'y':
+        # 数据合并到正式表StudPh中
+        put2studph()
+        
+    dump_itemselect_for_sch()
+
     # print('注意：执行时应将有关字体文件放入当前目录中')
     # print('''执行前所有数据导入与生成要具备两个条件：
     #     1.有要导入的考生信息表(在 studph 子目录中,注意字段顺序)，
