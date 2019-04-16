@@ -368,6 +368,20 @@ def dump_itemselect_for_sch():
         datas.extend(studs)
         save_datas_xlsx(sch+'确认表.xlsx',datas)
 
+# 导出各校体育考试确认表
+@db_session
+def dump_itemselect_all():
+    datas = [['学校名称', '学校代码', '姓名', '性别','准考证号','体育加试号','1分钟跳绳','立定跳远','投实心球','坐位体前屈'],]
+    studs = select(s for s in StudPh)
+    studs = [(s.sch, s.schcode, s.name, s.sex, s.signid, s.phid, 
+        s.rope_option if s.rope_option else '', 
+        s.jump_option if s.jump_option else '', 
+        s.globe_option if s.globe_option else '', 
+        s.bend_option if s.bend_option else '') for s in studs]
+    datas.extend(studs)
+    save_datas_xlsx('泗县考生信息汇总表.xlsx', datas)
+
+
 # 导出免试总表
 @db_session
 def dump_freeexam_studs():
@@ -648,24 +662,29 @@ if __name__ == '__main__':
     # check_files('freeexam')
     # check_files('itemselect')
 
-    exe_flag = input('全部免试表xls和选项表xls导入到数据库中并检验(y/n)：')
-    if exe_flag == 'y':
-        print('初始化数据库表...')
-        init_tab([FreeExam,ItemSelect])
-        print('...初始化完成！')
-        print('...导入免试表...')
-        gath_data('freeexam')
-        print('...导入选项表...')
-        gath_data('itemselect')
-        print('...开始检查数据...')
-        check_select()
+    # exe_flag = input('全部免试表xls和选项表xls导入到数据库中并检验(y/n)：')
+    # if exe_flag == 'y':
+    #     print('初始化数据库表...')
+    #     init_tab([FreeExam,ItemSelect])
+    #     print('...初始化完成！')
+    #     print('...导入免试表...')
+    #     gath_data('freeexam')
+    #     print('...导入选项表...')
+    #     gath_data('itemselect')
+    #     print('...开始检查数据...')
+    #     check_select()
 
-    exe_flag = input('是否启动数据合并到正式表StudPh中：(y/n)')
-    if exe_flag == 'y':
-        # 数据合并到正式表StudPh中
-        put2studph()
+    # exe_flag = input('是否启动数据合并到正式表StudPh中：(y/n)')
+    # if exe_flag == 'y':
+    #     # 数据合并到正式表StudPh中
+    #     put2studph()
         
-    dump_itemselect_for_sch()
+    # dump_itemselect_for_sch()
+
+    # dump_itemselect_all()
+
+    #考前免试后补导入
+    # add_freeexam()
 
     # print('注意：执行时应将有关字体文件放入当前目录中')
     # print('''执行前所有数据导入与生成要具备两个条件：
