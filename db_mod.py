@@ -81,3 +81,18 @@ class SignAll(db.Entity):
     # 1 县外转入，2 县外转入，县内转
     # 3 县内转学，4 无转学记录
     # 0 非应届生
+
+# 八年级学生记录
+class GradeY8(db.Entity):
+    sch = Required(str)
+    grade = Required(str)
+    sclass = Required(str)
+    gsrid = Optional(str,nullable = True)
+    ssrid = Optional(str,nullable = True)
+    dsrid = Optional(str,nullable = True)
+    name = Required(str)
+    idcode = Optional(str,nullable = True)
+    regtype = Optional(str,nullable=True) #户口类型
+    sex = Required(str)
+    nation =  Optional(str,nullable=True)
+
