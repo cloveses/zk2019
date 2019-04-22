@@ -5,8 +5,8 @@ import xlrd
 from db_mod import *
 
 
-# 导入初三在校生、转学表、关键信息变更表（excel格式）到数据库中
-# 三类表分别存放子目录：chg、gradey18、keyinfo之中
+# 导入初二在校生（excel格式）到数据库中
+# 表存放子目录：gradey8之中
 
 GRADE_KS = ('sch','grade','sclass','gsrid','ssrid',
     'dsrid','name','idcode','regtype','sex','nation')
@@ -61,6 +61,9 @@ def check_stud_idcode():
     print('身份证号码校验错误信息：')
     for s in select(s for s in GradeY8):
         if s.idcode and s.idcode[:-1].isdigit():
+            if 'x' in s.idcode:
+                print(s.idcode, s.name, s.sch)
+                s.idcode = s.idcode.upper()
             ret = check_idcode(s)
             if ret:
                 print(ret,':',s.sch,s.name,s.idcode,s.sex)
