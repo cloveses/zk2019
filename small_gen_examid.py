@@ -14,7 +14,7 @@ ID_SIZE = (210,297)
 ## 水印文本
 WATERMARK_TXT = "泗县教体局"
 # 标题及其位置
-TITLE = (5*mm,74*mm,"2019年初中学业水平考试")
+TITLE = (5*mm,74*mm,"2018年初中学业水平考试")
 ID_NAME = (10*mm,64*mm,"准　考　证")
 ## mm
 POS_X = 5 #(5,105+5)
@@ -35,7 +35,7 @@ BAR_X = 50
 BAR_Y = 14
 
 # 照片打印位置
-IMG_X = 55
+IMG_X = 50
 IMG_Y = 22
 
 pos_trans = ((0,0),(0,72),(0,72*2),(0,72*3),
@@ -79,7 +79,7 @@ def draw_one(canv,pos_trans,stud):
         canv.drawString(POS_X*mm,POS_Y[index]*mm,''.join((ITEM_NAMES[index],info)))
     # 绘制照片
     file_name = ''.join(('Z',stud[-1],'.jpg'))
-    path = os.path.join('ksPic',stud[-2],file_name)
+    path = os.path.join('photos',stud[-2],file_name)
     canv.drawImage(path,IMG_X*mm,IMG_Y*mm,width=30*mm,height=30*1.32*mm)
     # 绘制条形码
     draw_barcode(canv,stud[0])
@@ -117,12 +117,10 @@ def gen_pdf(dir_name,sch_name,studs,page_num=8):
 @db_session
 def gen_examid_sch(dir_name):
     schs = select(s.sch for s in StudPh)
-    excludes = ('宿州泗县草庙中学','宿州泗县三中','宿州泗县杨集中学','宿州泗县育才学校','宿州泗县中学')
-    schs = [sch for sch in schs if sch not in excludes]
     for sch in schs:
         datas = select(s 
          for s in StudPh if s.sch==sch).order_by(StudPh.classcode,StudPh.phid)
-        datas = [(s.phid,s.name,s.sex,s.exam_addr,s.sch,s.schcode,s.idcode) for s in datas]
+        datas = [(s.phid,s.name,s.sex,s.exam_addr,s.sch,s.schcode,s.signid) for s in datas]
         gen_pdf(dir_name,sch,datas)
 
 # # 按时间段（半日）和考点生成准考证
@@ -134,10 +132,10 @@ def gen_bak_examid(dir_name):
         for exam_addr in exam_addrs:
             studs = select(s for s in StudPh if s.exam_addr==exam_addr and 
                 s.exam_date==exam_date).order_by(StudPh.phid)
-            studs = [(s.phid,s.name,s.sex,s.exam_addr,s.sch,s.schcode,s.idcode) for s in studs]
+            studs = [(s.phid,s.name,s.sex,s.exam_addr,s.sch,s.schcode,s.signid) for s in studs]
             gen_pdf(dir_name,exam_addr+exam_date,studs)
 
 if __name__ == '__main__':
     # gen_pdf('idsd','泗县草沟中学',STUDS*8)
-    gen_examid_sch('idsd')
-    # gen_bak_examid('bakid')
+    # gen_examid_sch('idsd')
+    gen_bak_examid('bakid')
