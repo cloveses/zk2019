@@ -130,18 +130,23 @@ def arrange_phid():
     for arrange_data in arrange_datas:
         all_studs = []
 
-        # 半日考试中只排某一性别，且依据班级分组（同一班级尽量同组考试）
-        if len(arrange_data) == 4:
-            for sch in arrange_data[-2]:
-                studs = select(s for s in StudPh if s.sch==sch and
-                    s.sex==arrange_data[-1]).order_by(StudPh.classcode)[:]
-                all_studs.extend(studs)
-        # 半日考试中同时排男女生（先女生后男生），且依据班级分组（同一班级尽量同组考试）
-        elif len(arrange_data) == 3:
-            for sex in ('女','男'):
-                for sch in arrange_data[-1]:
-                    studs = select(s for s in StudPh if s.sch==sch and
+        sexes = ['女', '男']
+        first_sch = arrange_data[-1][0]
+        if isinstance(first_sch, tuple) and first_sch[-1] != sexes[0]:
+            sexes = sexes[::-1]
+
+        for sex in sexes:
+            for sch_data in arrange_data[-1]:
+                studs = []
+                if isinstance(sch_data, tuple) and sch_data[1] == sex:
+                    studs = select(s for s in StudPh if s.sch==sch_data[0] and
                         s.sex==sex).order_by(StudPh.classcode)[:]
+                    # print(sch_data[0], sex)
+                elif isinstance(sch_data, str):
+                    studs = select(s for s in StudPh if s.sch==sch_data and
+                        s.sex==sex).order_by(StudPh.classcode)[:]
+                    # print(sch_data, sex)
+                if studs:
                     all_studs.extend(studs)
 
         for stud in all_studs:
@@ -159,15 +164,25 @@ def save_datas_xlsx(filename,datas):
             w_sheet.write(rowi,coli,celld)
     w.close()
 
+# 导出中考报名号和体育准考证号总体数据
+@db_session
+def get_all_data_xls():
+    tab_title = ['中考报名号','准考证号','姓名', '性别','身份证号', '考点', '考试日期', '报名学校', '班级代码']
+    datas = [tab_title,]
+    studs = select(s for s in StudPh).order_by(StudPh.phid)
+    studs =  [[s.signid,s.phid,s.name, s.sex, s.idcode, s.exam_addr, s.exam_date, s.sch, s.classcode] for s in studs]
+    datas.extend(studs)
+    save_datas_xlsx('体育考号全县.xlsx',datas)
+
 # 导出各校中考报名号和体育准考证号
 @db_session
 def get_sch_data_xls():
     schs = select(s.sch for s in StudPh)
 
-    tab_title = ['中考报名号','准考证号','姓名']
+    tab_title = ['中考报名号','准考证号','姓名','身份证号', '考点', '考试日期', '报名学校', '班级代码']
     for sch in schs:
         datas = [tab_title,]
-        studs = select([s.signid,s.phid,s.name] for s in StudPh 
+        studs = select([s.signid,s.phid,s.name, s.idcode, s.exam_addr, s.exam_date, s.sch, s.classcode] for s in StudPh 
             if s.sch==sch)[:]
         datas.extend(studs)
         save_datas_xlsx(''.join((sch,'体育考号.xlsx')),datas)
@@ -246,7 +261,7 @@ def check_files(directory,start_row=1,grid_end=0):
         check_fun = None
     elif directory == 'itemselect':
         check_types = check_item_select_types
-        col_num = 8
+        col_num = 9
         check_fun = check_item_select
     else:
         raise MyException('目录名错误！')
@@ -255,6 +270,7 @@ def check_files(directory,start_row=1,grid_end=0):
     print('............................')
     if files:
         for file in files:
+            print('检验的文件 file:', file)
             infos = []
             wb = xlrd.open_workbook(file)
             ws = wb.sheets()[0]
@@ -266,7 +282,7 @@ def check_files(directory,start_row=1,grid_end=0):
                 datas = ws.row_values(i)
                 info = check_types(file,datas,i+1)
                 if info:
-                    infos.append('文件：{}中，第{}行，第{}列数据有误'.format(file,i+1,index+1))
+                    infos.append('文件：{}中，第{}行数据有误'.format(file,i+1,))
                 if len(infos) >= 3:
                     print('数据类型错误：',file,'\n')
                     for info in infos:
@@ -275,8 +291,9 @@ def check_files(directory,start_row=1,grid_end=0):
             # 校验行数据
             if not infos and check_fun is not None:
                 for i in range(start_row,nrows-grid_end):
-                    info = check_fun(file,ws.row_values(i),i+1)
+                    info = check_fun(file,ws.row_values(i)[:8],i+1)
                     if info:
+                        print(ws.row_values(i))
                         infos.append(info)
 
             # 检验关键信息
@@ -351,6 +368,20 @@ def dump_itemselect_for_sch():
         datas.extend(studs)
         save_datas_xlsx(sch+'确认表.xlsx',datas)
 
+# 导出各校体育考试确认表
+@db_session
+def dump_itemselect_all():
+    datas = [['学校名称', '学校代码', '姓名', '性别','准考证号','体育加试号','1分钟跳绳','立定跳远','投实心球','坐位体前屈'],]
+    studs = select(s for s in StudPh)
+    studs = [(s.sch, s.schcode, s.name, s.sex, s.signid, s.phid, 
+        s.rope_option if s.rope_option else '', 
+        s.jump_option if s.jump_option else '', 
+        s.globe_option if s.globe_option else '', 
+        s.bend_option if s.bend_option else '') for s in studs]
+    datas.extend(studs)
+    save_datas_xlsx('泗县考生信息汇总表.xlsx', datas)
+
+
 # 导出免试总表
 @db_session
 def dump_freeexam_studs():
@@ -377,11 +408,11 @@ def freexam_type2studph(file='全县免考满分表.xlsx'):
         else:
             print(int(datas[0]),int(datas[1]),datas[2],'数据类型错误')
 
-# 将跑步时间字符串转换为   秒数*10
-def chg_run_data(data):
-    m,s = data.split(':')
-    ms = int(m) * 60
-    return int((ms + float(s)) * 10)
+# # 将跑步时间字符串转换为   秒数*10
+# def chg_run_data(data):
+#     m,s = data.split(':')
+#     ms = int(m) * 60
+#     return int((ms + float(s)) * 10)
 
 # 首先手工处理EXCEL表中的错误，之后用以下方法来进行检查
 # 检查EXCEL表中的成绩数据 总分累计是否正确 赋分是否有问题 是否有缺项
@@ -416,6 +447,7 @@ def check_scores(file='2018体育考试成绩汇总表.xls'):
                     info.append('跳远和跳绳不能同时有成绩！')
                 else:
                     if datas[6] != '':
+                        # print(i)
                         data = int(datas[6])
                         score = int(datas[7])
                         totals += score
@@ -479,29 +511,48 @@ def check_scores(file='2018体育考试成绩汇总表.xls'):
                 else:
                     if datas[10] != '':
                         if isinstance(datas[10],str):
-                            if ':' not in datas[10]:
-                                print(i+1,phid,'10数据格式错误！')
-                            else:
-                                data = int(chg_run_data(datas[10]))
-                                score = int(datas[11])
-                                look_score = score_run_woman(data)
-                                if score != look_score:
-                                    info.append('800跑赋分错误{} {}'.format(datas[10],score))
+                            data = int(float(datas[10]) * 10)
+                            score = int(datas[11])
+                            look_score = score_run_woman(data)
+                            if score != look_score:
+                                info.append('800跑赋分错误{} {}'.format(datas[10],score))
                         else:
                             print(i+1,phid,'10数据格式错误！')
 
                     if datas[12] != '':
                         if isinstance(datas[12],str):
-                            if ':' not in datas[12]:
-                                print(i+1,phid,'12数据格式错误！')
-                            else:
-                                data = int(chg_run_data(datas[12]))
-                                score = int(datas[13])
-                                look_score = score_run_man(data)
-                                if score != look_score:
-                                    info.append('1000跑赋分错误{} {}'.format(datas[12],score))
+                            data = int(float(datas[12]) * 10)
+                            score = int(datas[13])
+                            look_score = score_run_man(data)
+                            if score != look_score:
+                                info.append('1000跑赋分错误{} {}'.format(datas[12],score))
                         else:
                             print(i+1,phid,'12数据格式错误！')
+                    # if datas[10] != '':
+                    #     if isinstance(datas[10],str):
+                    #         if ':' not in datas[10]:
+                    #             print(i+1,phid,'10数据格式错误！')
+                    #         else:
+                    #             data = int(chg_run_data(datas[10]))
+                    #             score = int(datas[11])
+                    #             look_score = score_run_woman(data)
+                    #             if score != look_score:
+                    #                 info.append('800跑赋分错误{} {}'.format(datas[10],score))
+                    #     else:
+                    #         print(i+1,phid,'10数据格式错误！')
+
+                    # if datas[12] != '':
+                    #     if isinstance(datas[12],str):
+                    #         if ':' not in datas[12]:
+                    #             print(i+1,phid,'12数据格式错误！')
+                    #         else:
+                    #             data = int(chg_run_data(datas[12]))
+                    #             score = int(datas[13])
+                    #             look_score = score_run_man(data)
+                    #             if score != look_score:
+                    #                 info.append('1000跑赋分错误{} {}'.format(datas[12],score))
+                    #     else:
+                    #         print(i+1,phid,'12数据格式错误！')
 
                 if total_score != totals:
                     info.append('总分有误！')
@@ -514,6 +565,7 @@ def check_scores(file='2018体育考试成绩汇总表.xls'):
             print(info)
 
 def clear_test_data(datas):
+    # print(datas)
     datas[0] = str(int(datas[0])) if isinstance(datas[0],float) or datas[0] else ''
     datas[2] = str(int(float(datas[2]) * 10)) if isinstance(datas[2],float) or datas[2] else ''
     datas[8] = str(int(float(datas[8]) * 100)) if isinstance(datas[8],float) or datas[8] else ''
@@ -570,12 +622,14 @@ def get_score_data(studs,keys):
         data = [getattr(s,chg_key(s,k)) for k in keys]
         datas.append(data)
     return datas
+    
 #导出所有学生的体育考试成绩 总体导出和分校导出
 @db_session
 def dump_score():
     col_name_all = ('signid','phid','name','sch','schcode','total_score')
     col_name_sch = ('signid','phid','name','sch','schcode','classcode','total_score',
-        'jump_score','rope_score','globe_score','bend_score','run8_score','run10_score')
+        'jump_data', 'jump_score', 'rope_data', 'rope_score','globe_data','globe_score',
+        'bend_data','bend_score','run8_data','run8_score','run10_data','run10_score')
     studs = select(s for s in StudPh).order_by(StudPh.phid)
     datas = [['中考报名号','体育考试号','姓名','学校','学校代码','总分'],]
     datas.extend(get_score_data(studs,col_name_all))
@@ -585,7 +639,8 @@ def dump_score():
     for sch in schs:
         studs = select(s for s in StudPh if s.sch==sch).order_by(StudPh.classcode)
         datas = [['中考报名号','体育考试号','姓名','学校','学校代码','班级代码','总分',
-            '立定跳远','跳绳','实心球','体前屈','800米跑','1000米跑'],]
+            '立定跳远成绩(cm)','立定跳远分数','跳绳成绩(次)','跳绳','实心球成绩(cm)','实心球分数',
+            '体前屈成绩(mm)','体前屈分数','800米跑成绩(s)','800米跑分数','1000米跑成绩(s)','1000米跑分数'],]
         datas.extend(get_score_data(studs,col_name_sch))
         save_datas_xlsx(sch+'体育考试成绩.xlsx',datas)
 
@@ -619,6 +674,45 @@ def add_freeexam():
 
 
 if __name__ == '__main__':
+    # arrange_phid()
+
+    # gen_seg_for_sch()
+    # get_all_data_xls()
+    # get_sch_data_xls()
+
+    # datas = gen_book_tbl()
+    # save_datas_xlsx('各时间段各考点考试分组号.xlsx',datas)
+
+    # check_files('freeexam')
+    # check_files('itemselect')
+
+    # exe_flag = input('全部免试表xls和选项表xls导入到数据库中并检验(y/n)：')
+    # if exe_flag == 'y':
+    #     print('初始化数据库表...')
+    #     init_tab([FreeExam,ItemSelect])
+    #     print('...初始化完成！')
+    #     print('...导入免试表...')
+    #     gath_data('freeexam')
+    #     print('...导入选项表...')
+    #     gath_data('itemselect')
+    #     print('...开始检查数据...')
+    #     check_select()
+
+    # exe_flag = input('是否启动数据合并到正式表StudPh中：(y/n)')
+    # if exe_flag == 'y':
+    #     # 数据合并到正式表StudPh中
+    #     put2studph()
+        
+    # dump_itemselect_for_sch()
+
+    # dump_itemselect_all()
+
+    # 考前免试后补导入
+    # add_freeexam()
+
+    # dump_freeexam_studs() #导出全县免试表
+
+
     # print('注意：执行时应将有关字体文件放入当前目录中')
     # print('''执行前所有数据导入与生成要具备两个条件：
     #     1.有要导入的考生信息表(在 studph 子目录中,注意字段顺序)，
@@ -708,6 +802,10 @@ if __name__ == '__main__':
     #对成绩的电子表格文件进行检查
     # check_scores('score\\2018泗县体考成绩上报.xls')
     #将正确的成绩从电子表格文件中导入数据库
-    score2studph('score\\2018泗县体考成绩上报.xls')
+    # score2studph('score\\2018泗县体考成绩上报.xls')
     #导出学生的体育成绩（全县版和分校版）
     # dump_score()
+
+    # check_scores('I:\\2019体育中考\\2019泗县体育中考总成绩.xls')
+    score2studph('I:\\2019体育中考\\2019泗县体育中考总成绩.xls')
+    dump_score()
