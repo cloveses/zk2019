@@ -605,7 +605,7 @@ def score2studph(file='2018体育考试成绩汇总表.xls'):
             stud.set(**params)
 
 def chg_key(s,k):
-    # 导出成绩时，测试数据中有例外情况（如弃考等成绩为0的），则导出例外情况
+    # 导出成绩时，测试数据中有例外情况（如弃考等成绩为0的, 测试数据中手工填入"弃考"字样），则导出例外情况
     if k.endswith('score') and not k.startswith('total'):
         data_k = '_'.join((k.split('_')[0],'data'))
         v = getattr(s,data_k)
