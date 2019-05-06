@@ -610,7 +610,10 @@ def chg_key(s,k):
         data_k = '_'.join((k.split('_')[0],'data'))
         v = getattr(s,data_k)
         if v:
-            if not re.match(r'\d+',v):
+            try:
+                float(v)
+            except:
+                print(s.phid, s.sch, v)
                 return data_k
     return k
 
@@ -807,5 +810,5 @@ if __name__ == '__main__':
     # dump_score()
 
     # check_scores('I:\\2019体育中考\\2019泗县体育中考总成绩.xls')
-    score2studph('I:\\2019体育中考\\2019泗县体育中考总成绩.xls')
+    # score2studph('I:\\2019体育中考\\2019泗县体育中考总成绩.xls')
     dump_score()
