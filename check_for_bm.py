@@ -1,10 +1,9 @@
 import datetime
 from db_mod import *
+from sch_id import code_sches
 
 # 对参加中考报名的全部中考报名考生进行资格审查
 
-# 注意：
-# 运行完后对转学记录中身份证号为空的学生进行查询和审查
 
 # zhtype=1  县外转入              outzh=1 
 # zhtype=2  县外转入且县内转学    outzh=2
@@ -13,10 +12,30 @@ from db_mod import *
 # zhtype=0  无应届学籍学生审查时视为历届生（包括外省学生回乡报考和历届生）
 #           外省回乡报考的应届只能由招办依照考生提供的材料审查
 
+# 注意：
+# 运行完后对转学记录中身份证号为空的学生进行查询和审查
+
 # 审查时注意：
 # 转学代码不是1或2，但从招办报名的；
 # 历届以应届身份报名(转学代码为0，届别标志为应届的)
 # 招办报名且转学代码为3(通过从招办报名不正当获取定向指标)
+
+
+#查询报名学校与学籍学校不一致学生 和 应届学生报名填写成历届
+@db_session
+def get_sch_diff():
+    for signstud in select(s for s in SignAll):
+        gradeystud = select(s for s in GradeY18 if s.idcode.upper()==signstud.idcode.upper()).first()
+        if gradeystud:
+            signsch = code_sches[signstud.schcode]
+            if gradeystud.sch != signsch:
+                print(signsch, gradeystud.sch)
+                print(signstud.name, '中考报名所在学校', signstud.sch, '学籍所在学校', gradeystud.sch)
+            # else:
+            #     print(signstud.id, end=',')
+            if signstud.graduation_year != '2019':
+                print('应届学生报名为历届：', signstud.name, signstud.idcode)
+
 
 def save_datas_xlsx(filename,datas):
     #将一张表的信息写入电子表格中XLSX文件格式
@@ -160,4 +179,5 @@ if __name__ == '__main__':
     db.generate_mapping(create_tables=True)
 
     # set_signall_zhtype()
-    get_datas()
+    # get_datas()
+    get_sch_diff()

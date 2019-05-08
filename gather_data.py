@@ -50,7 +50,7 @@ def check_idcode(stud):
     s = sum((i*int(j) for i,j in zip(wi,idcode[:-1])))
     checkcode = checkcodes[s % 11]
     info = ''
-    if 'x' in idcode::
+    if 'x' in idcode:
         print(stud.name, stud.idcode, 'x应为大写！')
     ck = 'X' if idcode[-1] == 'x' else idcode[-1]
     if checkcode != ck:

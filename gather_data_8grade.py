@@ -3,7 +3,7 @@ import string
 import csv
 import xlrd
 from db_mod import *
-
+import xlwt
 
 # 导入初二在校生（excel格式）到数据库中
 # 表存放子目录：gradey8之中
@@ -78,16 +78,45 @@ def save_datas_xlsx(filename,datas):
             w_sheet.write(rowi,coli,celld)
     w.close()
 
-def dump_bm():
-    for sch in select(s.sch for s in GradeY8):
+
+def save_datas(filename,datas):
+    #将一张表的信息写入电子表格中
+    #文件内容不能太大，否则输出文件会出错。
+    w = xlwt.Workbook(encoding='utf-8')
+    ws = w.add_sheet('sheet1')
+    for rowi,row in enumerate(datas):
+        rr = ws.row(rowi)
+        for coli,celld in enumerate(row):
+            if isinstance(celld,int):
+                rr.set_cell_number(coli,celld)
+            elif isinstance(celld,str):
+                rr.set_cell_text(coli,celld)
+    #rr = ws.row(4)
+    w.save(filename)
+
+@db_session
+def dump_bm(sch=None):
+    if sch:
         datas = [['全国学籍号', '学籍号', '姓名', '身份证号', '毕业年份', '届别', '性别'],]
         for s in select(s for s in GradeY8 if s.sch == sch):
             datas.append([s.gsrid, s.ssrid, s.name, s.idcode, '2020', '应届', s.sex])
-        save_datas_xlsx('sch'+'.xlsx', datas)
+        # print(sch)
+        # save_datas_xlsx(sch+'.xlsx', datas)
+        save_datas(sch+'.xls', datas)
+    else:
+        for sch in select(s.sch for s in GradeY8):
+            datas = [['全国学籍号', '学籍号', '姓名', '身份证号', '毕业年份', '届别', '性别'],]
+            for s in select(s for s in GradeY8 if s.sch == sch):
+                datas.append([s.gsrid, s.ssrid, s.name, s.idcode, '2020', '应届', s.sex])
+            # print(sch)
+            # save_datas_xlsx(sch+'.xlsx', datas)
+            save_datas(sch+'.xls', datas)
+
 
 if __name__ == '__main__':
     db.bind(**DB_PARAMS)
     db.generate_mapping(create_tables=True)
 
     # gath_data(GradeY8,GRADE_KS,'data\\gradey8',0) # 末尾行无多余数据
-    check_stud_idcode()
+    # check_stud_idcode()
+    dump_bm(sch='泗县泗州学校')

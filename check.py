@@ -1,6 +1,6 @@
 from db_mod import *
 
-# 提供给招办的预报名（从网上报名）名单的处理程序
+# 根据转学表、关键信息变更表对全部初三应届学生进行转学标志设置的处理程序
 
 
 # # \copy gradey18 (sch,grade,sclass,gsrid,ssrid,dsrid,name,idcode,sex) from g:\grade32018\grade183.csv with csv
