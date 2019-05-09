@@ -36,6 +36,14 @@ def get_sch_diff():
             if signstud.graduation_year != '2019':
                 print('应届学生报名为历届：', signstud.name, signstud.idcode)
 
+@db_session
+def get_exchange_idcode():
+    for stud in select(s for s in GradeY18):
+        if stud.oidcode:
+            repeat_stud = select(s for s in GradeY18 if s.idcode.upper()==stud.oidcode.upper()).first()
+            if repeat_stud:
+                print(stud.name, stud.oidcode, repeat_stud.sch, '旧身份证号，有人使用：', repeat_stud.name, repeat_stud.idcode, repeat_stud.sch)
+
 
 def save_datas_xlsx(filename,datas):
     #将一张表的信息写入电子表格中XLSX文件格式
@@ -49,7 +57,7 @@ def save_datas_xlsx(filename,datas):
 
 @db_session
 def set_signall_zhtype():
-    year = datetime.datetime.now().year % 100
+    year = datetime.datetime.now().year
     for stud in SignAll.select():
         gradey18 = select(s for s in GradeY18 if s.idcode.upper()==stud.idcode.upper()).first()
         if gradey18:
@@ -178,6 +186,7 @@ if __name__ == '__main__':
     db.bind(**DB_PARAMS)
     db.generate_mapping(create_tables=True)
 
-    # set_signall_zhtype()
+    # get_sch_diff()
+    # get_exchange_idcode()
+    set_signall_zhtype()
     # get_datas()
-    get_sch_diff()
