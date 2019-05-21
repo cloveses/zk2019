@@ -4,8 +4,8 @@ DB_PARAMS = {
     'provider':'postgres',
     'user':'postgres',
     'password':'123456',
-    'host':'localhost',
-    'database':'ph18'
+    'host':'192.168.7.233',
+    'database':'sc2019'
 }
 
 db = Database()
@@ -198,8 +198,8 @@ def score_bend_woman(long):
         ret = select(r.score for r in SkilLvl if r.bend_woman <= long).max()
     return 0 if ret is None  else ret
 
-if __name__ == '__main__':
-    print(score_run_man(800))
-    print(score_run_woman(500))
-    print(score_globe_man(323))
-    print(score_bend_woman(8))
+# if __name__ == '__main__':
+#     print(score_run_man(800))
+#     print(score_run_woman(500))
+#     print(score_globe_man(323))
+#     print(score_bend_woman(8))

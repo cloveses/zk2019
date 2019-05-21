@@ -78,6 +78,9 @@ class SignAll(db.Entity):
     addr = Required(str)
     periodtel = Required(str)
     zhtype = Optional(int,nullable = True)
+    regaddr = Optional(bool, nullable=True)
+    #regaddr 户籍地，本地为True,用于审查外地转入本地学生定向享受情况
+
     # 1 县外转入，2 县外转入，县内转
     # 3 县内转学，4 无转学记录
     # 0 非应届生

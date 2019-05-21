@@ -810,5 +810,5 @@ if __name__ == '__main__':
     # dump_score()
 
     # check_scores('I:\\2019体育中考\\2019泗县体育中考总成绩.xls')
-    # score2studph('I:\\2019体育中考\\2019泗县体育中考总成绩.xls')
+    score2studph('I:\\2019体育中考\\2019泗县体育中考总成绩.xls')
     dump_score()
