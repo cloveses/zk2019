@@ -647,6 +647,7 @@ def dump_score():
         datas.extend(get_score_data(studs,col_name_sch))
         save_datas_xlsx(sch+'体育考试成绩.xlsx',datas)
 
+
 TOTAL_SCORE = 60
 
 @db_session
@@ -656,6 +657,28 @@ def set_freeexam_score():
             stud.total_score = TOTAL_SCORE
         else:
             stud.total_score = int(TOTAL_SCORE * 0.6)
+
+# 依据要保存的学生和字段名获取信息
+def get_score_data_upload(studs,keys):
+    datas=[]
+    # datas.append(keys)
+    for s in studs:
+        data = [getattr(s,chg_key(s,k)) for k in keys]
+        data.insert(0,'泗县')
+        datas.append(data)
+    return datas
+
+#导出上报的的体育考试成绩
+@db_session
+def dump_score_upload():
+    col_name_all = ('signid','name','sch',
+        'jump_score', 'rope_score','globe_score','bend_score','run8_score','run10_score','total_score',)
+    studs = select(s for s in StudPh).order_by(StudPh.signid)
+    datas = [['县区','准考证号','姓名','毕业学校',
+        '立定跳远分数','跳绳分数','实心球分数','体前屈分数','800米跑分数','1000米跑分数','总分'],]
+    datas.extend(get_score_data_upload(studs,col_name_all))
+    save_datas_xlsx('泗县体育考试成绩上报.xlsx',datas)
+
 
 # 初始化数据库表
 @db_session
@@ -810,5 +833,5 @@ if __name__ == '__main__':
     # dump_score()
 
     # check_scores('I:\\2019体育中考\\2019泗县体育中考总成绩.xls')
-    score2studph('I:\\2019体育中考\\2019泗县体育中考总成绩.xls')
-    dump_score()
+    # score2studph('I:\\2019体育中考\\2019泗县体育中考总成绩.xls')
+    dump_score_upload()
