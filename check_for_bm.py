@@ -117,6 +117,34 @@ def get_datas_19():
     save_datas_xlsx('全县定向审查结果.xlsx', all_datas)
 
 
+@db_session
+def get_datas_19upload():
+    data_title = ['中考报名号','姓名','毕业年度','报名点代码','定向录取条件','备注']
+    all_datas = [data_title,]
+    for stud in select(s for s in SignAll):
+        if stud.zhtype == 0:
+            result = ('不享受定向','历届生','x')
+        elif stud.zhtype == 1:
+            if stud.idcode.startswith('341324'):
+                result = ('享受定向','仅有县外转入记录', '*')
+            else:
+                if stud.regaddr:
+                    result = ('享受定向','仅有县外转入记录', '**')
+                else:
+                    result = ('不享受定向','仅有县外转入记录,非本地户口', '*x')
+        elif stud.zhtype == 2:
+            result = ('不享受定向','应届同时有县外、县内转学记录', '&')
+        elif stud.zhtype == 3:
+            result = ('不享受定向','应届同时有县内转学记录', '~')
+        elif stud.zhtype == 4:
+            result = ('享受定向','应届无任何转学记录')
+        stud_data = [stud.signid,stud.name,stud.graduation_year,stud.schcode]
+        stud_data.extend(result)
+        all_datas.append(stud_data[:])
+
+    save_datas_xlsx('全县定向审查结果(上传用).xlsx', all_datas)
+
+
 # @db_session
 # def get_datas():
 #     data_title = ['中考报名号','姓名','性别','身份证号','学校','班级代码','定向与否','备注']
@@ -229,4 +257,5 @@ if __name__ == '__main__':
     # get_exchange_idcode()
     # set_signall_zhtype()
     # 导出前需处理仅有县外转入记录的学生 审查 zh_regaddr_flag.py
-    get_datas_19()
+    # get_datas_19()
+    get_datas_19upload()
